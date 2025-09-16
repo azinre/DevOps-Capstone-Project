@@ -23,7 +23,14 @@ This repository contains the template to be used for the Final Project for the C
 This repository demonstrates the full DevOps lifecycle — from code, build, and test, to containerization, deployment, and monitoring.  
 
 ---
+## badge for GitHub Actions
 
+
+![Build Status](https://github.com/azinre/DevOps-Capstone-Project/actions/workflows/ci-build.yaml/badge.svg)
+
+Capstone project for the **IBM DevOps & Software Engineering Program**.  
+
+---
 ## 🚀 Getting Started  
 
 ### Prerequisites  

@@ -112,7 +112,7 @@ docker run -p 8080:8080 customer-accounts-service
 
 
 The service will be available at:
-👉 http://localhost:8080/
+👉 http://localhost:8000/
 
 ## ☸️ Kubernetes Deployment
 

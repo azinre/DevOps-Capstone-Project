@@ -1,12 +1,12 @@
 FROM python:3.9-slim
 
-# Establish a working folder
+# Create working folder and install dependencies
 WORKDIR /app
-
-# Establish dependencies
 COPY requirements.txt .
 RUN python -m pip install -U pip wheel && \
     pip install -r requirements.txt
+# RUN pip install --no-cache-dir -r requirements.txt
+
 
 # Copy source files last because they change the most
 COPY service ./service
@@ -20,3 +20,4 @@ USER service
 ENV PORT 8000
 EXPOSE $PORT
 CMD ["gunicorn", "service:app", "--bind", "0.0.0.0:8000"]
+

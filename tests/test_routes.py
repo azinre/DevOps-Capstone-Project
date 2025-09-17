@@ -8,6 +8,9 @@ Test cases can be run with the following:
 from unittest import TestCase
 from service.common import status  # HTTP Status Codes
 from service.routes import app, reset_counters
+from service import talisman
+
+HTTPS_ENVIRON = {'wsgi.url_scheme': 'https'}
 
 
 ######################################################################
@@ -20,6 +23,7 @@ class CounterTest(TestCase):
     def setUpClass(cls):
         """ This runs once before the entire test suite """
         app.testing = True
+        talisman.force_https = False
 
     @classmethod
     def tearDownClass(cls):
@@ -130,3 +134,21 @@ class CounterTest(TestCase):
         # Gte it to make sure it's really gone
         resp = self.app.get(f"/counters/{name}")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        
+    def test_security_headers(self):
+        """It should return security headers"""
+        response = self.app.get("/", environ_overrides=HTTPS_ENVIRON)
+        headers = response.headers
+
+        self.assertEqual(headers.get("X-Frame-Options"), "SAMEORIGIN")
+        self.assertEqual(headers.get("X-Content-Type-Options"), "nosniff")
+        self.assertIn("default-src 'self'; object-src 'none'", headers.get(
+            "Content-Security-Policy"))
+        self.assertEqual(headers.get("Referrer-Policy"), 
+                         "strict-origin-when-cross-origin")
+
+    def test_cors_headers(self):
+        """It should return CORS headers"""
+        response = self.app.get("/", environ_overrides=HTTPS_ENVIRON)
+        headers = response.headers
+        self.assertEqual(headers.get("Access-Control-Allow-Origin"), "*")

@@ -10,6 +10,8 @@ spec:
       type: string
     - name: branch
       type: string
+    - name: build-image
+      type: string
   tasks:
     - name: clone
       taskRef:
@@ -48,4 +50,15 @@ spec:
           value: "-v --with-spec --spec-color"
       runAfter:
         - clone
-        
+    - name: build
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+      taskRef:
+        name: buildah
+      params:
+        - name: IMAGE
+          value: $(params.build-image)
+      runAfter:
+        - lint
+        - tests

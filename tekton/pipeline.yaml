@@ -2,9 +2,8 @@ apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: cd-pipeline
+  namespace: default
 spec:
-  workspaces:
-    - name: pipeline-workspace
   params:
     - name: repo-url
       type: string
@@ -14,68 +13,65 @@ spec:
       type: string
   tasks:
     - name: clone
-      taskRef:
-        name: git-clone
-      workspaces:
-        - name: output
-          workspace: pipeline-workspace
       params:
         - name: url
           value: $(params.repo-url)
         - name: revision
           value: $(params.branch)
-    - name: lint
-      workspaces:
-        - name: source
-          workspace: pipeline-workspace
       taskRef:
-        name: flake8
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: pipeline-workspace
+    - name: lint
       params:
         - name: image
-          value: "python:3.9-slim"
+          value: python:3.9-slim
         - name: args
           value: ["--count", "--max-complexity=10", "--max-line-length=127", "--statistics"]
-      runAfter:
-        - clone
-    - name: tests
+      runAfter: ["clone"]
+      taskRef:
+        name: flake8
       workspaces:
         - name: source
           workspace: pipeline-workspace
-      taskRef:
-        name: nose
+    - name: tests
       params:
         - name: database_uri
-          value: "sqlite:///test.db"
+          value: sqlite:///test.db
         - name: args
-          value: "-v --with-spec --spec-color"
-      runAfter:
-        - clone
-    - name: build
+          value: -v --with-spec --spec-color
+      runAfter: ["clone"]
+      taskRef:
+        name: nose
       workspaces:
         - name: source
           workspace: pipeline-workspace
-      taskRef:
-        name: buildah
+    - name: build
       params:
         - name: IMAGE
           value: $(params.build-image)
-      runAfter:
-        - lint
-        - tests
+      runAfter: ["lint", "tests"]
+      taskRef:
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
     - name: deploy
+      params:
+        - name: SCRIPT
+          value: |
+            echo "Updating manifest..."
+            sed -i "s|IMAGE_NAME_HERE|$(params.build-image)|g" deploy/deployment.yaml
+            cat deploy/deployment.yaml
+            echo "Deploying to Kubernetes..."
+            kubectl apply -f deploy/
+            kubectl get pods -l app=accounts
+      runAfter: ["build"]
+      taskRef:
+        name: kubectl-client
       workspaces:
         - name: manifest-dir
           workspace: pipeline-workspace
-      taskRef:
-        name: kubectl-client
-      params:
-      - name: SCRIPT
-        value: |
-          echo "Updating manifest..."
-          sed -i "s|IMAGE_NAME_HERE|$(params.build-image)|g" deploy/deployment.yaml
-          cat deploy/deployment.yaml
-          echo "Deploying to Kubernetes..."
-          kubectl apply -f deploy/
-          kubectl get pods -l app=accounts
-      runAfter:
-        - build
+  workspaces:
+    - name: pipeline-workspace

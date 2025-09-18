@@ -11,6 +11,6 @@ spec:
       type: string
   steps:
     - name: run-kubectl
-      image: bitnami/kubectl:latest
+      image: bitnami/kubectl:1.31.0
       workingDir: $(workspaces.manifest-dir.path)
       script: $(params.SCRIPT)

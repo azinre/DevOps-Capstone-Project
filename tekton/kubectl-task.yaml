@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kubectl-client
+spec:
+  description: Runs kubectl commands against the cluster.
+  workspaces:
+    - name: manifest-dir
+  params:
+    - name: SCRIPT
+      type: string
+  steps:
+    - name: run-kubectl
+      image: bitnami/kubectl:latest
+      workingDir: $(workspaces.manifest-dir.path)
+      script: $(params.SCRIPT)
